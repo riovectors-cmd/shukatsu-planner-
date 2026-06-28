@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>終活プランナー</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Hiragino Sans', 'Yu Gothic', Meiryo, sans-serif;
+            background: #f5f0eb; color: #333; line-height: 1.7; font-size: 15px;
+        }
+        header { background: #4a7c6f; color: white; padding: 20px 24px; text-align: center; }
+        header h1 { font-size: 22px; font-weight: 600; letter-spacing: 2px; }
+        header p { font-size: 13px; opacity: 0.85; margin-top: 4px; }
+
+        nav { display: flex; flex-wrap: wrap; background: #3a6b5e; }
+        nav button {
+            flex: 1; min-width: 80px; padding: 11px 6px;
+            background: none; border: none; border-bottom: 3px solid transparent;
+            color: rgba(255,255,255,0.75); font-size: 12px; font-family: inherit;
+            cursor: pointer; transition: all 0.2s; line-height: 1.4;
+        }
+        nav button.active { color: white; border-bottom-color: #a8d5c7; background: rgba(255,255,255,0.1); }
+        nav button:hover:not(.active) { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.9); }
+
+        .container { max-width: 880px; margin: 0 auto; padding: 20px 14px; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .card { background: white; border-radius: 12px; padding: 22px; margin-bottom: 18px; box-shadow: 0 2px 8px rgba(0,0,0,0.07); }
+        .card h2 { font-size: 16px; color: #4a7c6f; margin-bottom: 12px; padding-bottom: 9px; border-bottom: 2px solid #e8f4f1; }
+        .desc { font-size: 13px; color: #888; margin-bottom: 12px; }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+        .form-row.single { grid-template-columns: 1fr; }
+        .form-group { display: flex; flex-direction: column; gap: 4px; }
+        .field-label { font-size: 13px; font-weight: 600; color: #555; }
+
+        input[type="text"], select, textarea {
+            padding: 9px 12px; border: 1.5px solid #ddd; border-radius: 8px;
+            font-size: 14px; font-family: inherit; background: #fafafa; transition: border-color 0.2s;
+        }
+        input[type="text"]:focus, select:focus, textarea:focus {
+            outline: none; border-color: #4a7c6f; background: white;
+        }
+        textarea { resize: vertical; min-height: 90px; }
+
+        .btn { padding: 9px 18px; border: none; border-radius: 8px; font-size: 14px; font-family: inherit; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: #4a7c6f; color: white; }
+        .btn-primary:hover { background: #3a6b5e; }
+        .btn-secondary { background: #e8f4f1; color: #4a7c6f; }
+        .btn-secondary:hover { background: #d4ece6; }
+        .btn-danger { background: #fff0f0; color: #c0392b; }
+        .btn-danger:hover { background: #fcd8d8; }
+        .btn-sm { padding: 5px 11px; font-size: 12px; }
+
+        .list-item { display: flex; align-items: flex-start; padding: 12px; border: 1.5px solid #e8f0ee; border-radius: 10px; margin-bottom: 9px; background: #fafdfb; gap: 10px; }
+        .badge { background: #4a7c6f; color: white; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; flex-shrink: 0; margin-top: 2px; }
+        .badge.red { background: #b05a4a; }
+        .badge.blue { background: #4a6a8a; }
+        .badge.purple { background: #7a5a9a; }
+        .item-info { flex: 1; min-width: 0; }
+        .item-info strong { display: block; font-size: 14px; color: #222; }
+        .item-meta { font-size: 12px; color: #777; margin-top: 2px; }
+        .item-notes { font-size: 12px; color: #666; margin-top: 4px; white-space: pre-wrap; }
+
+        .add-form { background: #f5faf8; border: 1.5px dashed #b5d5cc; border-radius: 10px; padding: 14px; margin-top: 14px; }
+        .add-form.hidden { display: none; }
+        .form-actions { display: flex; gap: 8px; margin-top: 10px; }
+
+        .empty-state { text-align: center; padding: 28px; color: #bbb; font-size: 13px; }
+        .empty-state .icon { font-size: 32px; margin-bottom: 8px; }
+
+        .radio-group { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 4px; }
+        .radio-pill { display: flex; align-items: center; gap: 5px; padding: 6px 13px; border: 1.5px solid #ddd; border-radius: 20px; cursor: pointer; font-size: 13px; background: #fafafa; transition: all 0.2s; user-select: none; }
+        .radio-pill:hover { border-color: #4a7c6f; background: #f0f8f5; }
+        .radio-pill.selected { border-color: #4a7c6f; background: #e8f4f1; color: #2d6358; font-weight: 600; }
+        .radio-pill input[type="radio"] { accent-color: #4a7c6f; }
+
+        .notice { background: #fff8e8; border: 1.5px solid #f0d070; border-radius: 8px; padding: 10px 13px; font-size: 13px; color: #665500; margin-bottom: 14px; }
+
+        .save-bar { text-align: right; font-size: 12px; color: #4a7c6f; height: 18px; margin-bottom: 4px; opacity: 0; transition: opacity 0.4s; }
+        .save-bar.show { opacity: 1; }
+
+        .toolbar { display: flex; justify-content: flex-end; gap: 8px; margin-bottom: 12px; }
+
+        @media (max-width: 600px) {
+            .form-row { grid-template-columns: 1fr; }
+        }
+        @media print {
+            nav, .toolbar, .add-form, .btn, header { display: none !important; }
+            .tab-content { display: block !important; }
+            body { background: white; }
+            .card { box-shadow: none; border: 1px solid #ddd; page-break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>終活プランナー</h1>
+    <p>大切な人への備え・想いをまとめて記録しておきましょう</p>
+</header>
+
+<nav>
+    <button class="active" onclick="showTab('assets',this)">資産・財産</button>
+    <button onclick="showTab('medical',this)">医療・介護</button>
+    <button onclick="showTab('contacts',this)">家族・連絡先</button>
+    <button onclick="showTab('note',this)">エンディングノート</button>
+    <button onclick="showTab('funeral',this)">葬儀・お墓</button>
+</nav>
+
+<div class="container">
+    <div class="toolbar">
+        <button class="btn btn-secondary" onclick="window.print()">印刷</button>
+        <button class="btn btn-secondary" onclick="exportData()">データ保存</button>
+        <button class="btn btn-secondary" onclick="importData()">データ読込</button>
+    </div>
+
+    <!-- ===== 資産・財産 ===== -->
+    <div id="tab-assets" class="tab-content active">
+        <div class="card">
+            <h2>資産・保険・口座のリスト</h2>
+            <p class="desc">預金口座・保険・不動産などを登録しておくと、万が一の際に家族が困りません。</p>
+            <div id="asset-list"></div>
+            <div id="add-asset-form" class="add-form hidden">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="field-label">種類</label>
+                        <select id="asset-type">
+                            <option>預金・口座</option><option>保険</option><option>不動産</option>
+                            <option>有価証券・株</option><option>年金</option>
+                            <option>ローン・負債</option><option>その他資産</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="field-label">名称・詳細 <span style="color:#c00">*</span></label>
+                        <input type="text" id="asset-name" placeholder="例：○○銀行 普通預金">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="field-label">金融機関・保管場所</label>
+                        <input type="text" id="asset-institution" placeholder="例：△△銀行 ××支店">
+                    </div>
+                    <div class="form-group">
+                        <label class="field-label">担当者・連絡先</label>
+                        <input type="text" id="asset-contact" placeholder="例：担当 ○○ / 0120-xxx-xxx">
+                    </div>
+                </div>
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label class="field-label">備考（証書番号・保管場所など）</label>
+                        <textarea id="asset-notes" placeholder="口座番号、証書の保管場所など" style="min-height:65px;"></textarea>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-primary" onclick="addItem('asset')">追加する</button>
+                    <button class="btn btn-secondary" onclick="toggleForm('asset')">キャンセル</button>
+                </div>
+            </div>
+            <div style="margin-top:14px;">
+                <button class="btn btn-secondary" id="add-asset-btn" onclick="toggleForm('asset')">＋ 追加する</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>遺言書</h2>
+            <div class="save-bar" id="will-save-bar">✓ 自動保存しました</div>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="field-label">遺言書の有無</label>
+                <div class="radio-group">
+                    <label class="radio-pill"><input type="radio" name="will-exists" value="あり" onchange="onRadio(this,'will')"> あり</label>
+                    <label class="radio-pill"><input type="radio" name="will-exists" value="なし" onchange="onRadio(this,'will')"> なし</label>
+                    <label class="radio-pill"><input type="radio" name="will-exists" value="作成予定" onchange="onRadio(this,'will')"> 作成予定</label>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="field-label">遺言書の種類</label>
+                <div class="radio-group">
+                    <label class="radio-pill"><input type="radio" name="will-type" value="公正証書遺言" onchange="onRadio(this,'will')"> 公正証書遺言</label>
+                    <label class="radio-pill"><input type="radio" name="will-type" value="自筆証書遺言" onchange="onRadio(this,'will')"> 自筆証書遺言</label>
+                    <label class="radio-pill"><input type="radio" name="will-type" value="法務局保管" onchange="onRadio(this,'will')"> 法務局保管</label>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="field-label">保管場所</label>
+                    <input type="text" id="will-location" placeholder="例：自宅 書斎の金庫の中" oninput="autoSave('will')">
+                </div>
+                <div class="form-group">
+                    <label class="field-label">依頼した弁護士・司法書士</label>
+                    <input type="text" id="will-lawyer" placeholder="例：○○法律事務所 / 03-xxxx-xxxx" oninput="autoSave('will')">
+                </div>
+            </div>
+            <div class="form-row single">
+                <div class="form-group">
+                    <label class="field-label">備考・メモ</label>
+                    <textarea id="will-notes" placeholder="遺言書に関する補足など" style="min-height:65px;" oninput="autoSave('will')"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 医療・介護 ===== -->
+    <div id="tab-medical" class="tab-content">
+        <div class="save-bar" id="medical-save-bar">✓ 自動保存しました</div>
+
+        <div class="card">
+            <h2>医療の希望</h2>
+            <div class="notice">ここに記載した希望は家族や医療関係者への意思表示になります。正式な書類（尊厳死宣言書など）とは異なりますが、あなたの意思を伝える大切な記録です。</div>
+
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="field-label">延命措置（回復の見込みがない場合）</label>
+                <div class="radio-group">
+                    <label class="radio-pill"><input type="radio" name="med-lifesupport" value="希望する" onchange="onRadio(this,'medical')"> 希望する</label>
+                    <label class="radio-pill"><input type="radio" name="med-lifesupport" value="希望しない（自然な形で）" onchange="onRadio(this,'medical')"> 希望しない（自然な形で）</label>
+                    <label class="radio-pill"><input type="radio" name="med-lifesupport" value="家族に任せる" onchange="onRadio(this,'medical')"> 家族に任せる</label>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="field-label">人工呼吸器・胃ろうなどの延命治療</label>
+                <div class="radio-group">
+                    <label class="radio-pill"><input type="radio" name="med-artificial" value="希望する" onchange="onRadio(this,'medical')"> 希望する</label>
+                    <label class="radio-pill"><input type="radio" name="med-artificial" value="希望しない" onchange="onRadio(this,'medical')"> 希望しない</label>
+                    <label class="radio-pill"><input type="radio" name="med-artificial" value="状況による" onchange="onRadio(this,'medical')"> 状況による</label>
+                    <label class="radio-pill"><input type="radio" name="med-artificial" value="家族に任せる" onchange="onRadio(this,'medical')"> 家族に任せる</label>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="field-label">臓器提供</label>
+                <div class="radio-group">
+                    <label class="radio-pill"><input type="radio" name="med-organ" value="すべて希望する" onchange="onRadio(this,'medical')"> すべて希望する</label>
+                    <label class="radio-pill"><input type="radio" name="med-organ" value="一部希望する" onchange="onRadio(this,'medical')"> 一部希望する</label>
+                    <label class="radio-pill"><input type="radio" name="med-organ" value="希望しない" onchange="onRadio(this,'medical')"> 希望しない</label>
+                    <label class="radio-pill"><input type="radio" name="med-organ" value="家族に任せる" onchange="onRadio(this,'medical')"> 家族に任せる</label>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="field-label">献体（医学教育への提供）</label>
+                <div class="radio-group">
+                    <label class="radio-pill"><input type="radio" name="med-body" value="希望する" onchange="onRadio(this,'medical')"> 希望する</label>
+                    <label class="radio-pill"><input type="radio" name="med-body" value="希望しない" onchange="onRadio(this,'medical')"> 希望しない</label>
+                    <label class="radio-pill"><input type="radio" name="med-body" value="未定" onchange="onRadio(this,'medical')"> 未定</label>
+                </div>
+            </div>
+            <div class="form-row single">
+                <div class="form-group">
+                    <label class="field-label">医療に関するその他の希望・補足</label>
+                    <textarea id="med-other" placeholder="臓器提供の詳細、その他の医療に関する希望など" oninput="autoSave('medical')"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>介護の希望</h2>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="field-label">介護が必要になった場合の希望</label>
+                <div class="radio-group">
+                    <label class="radio-pill"><input type="radio" name="care-place" value="自宅で介護を受けたい" onchange="onRadio(this,'medical')"> 自宅で</label>
+                    <label class="radio-pill"><input type="radio" name="care-place" value="介護施設に入りたい" onchange="onRadio(this,'medical')"> 施設に入りたい</label>
+                    <label class="radio-pill"><input type="radio" name="care-place" value="家族に任せる" onchange="onRadio(this,'medical')"> 家族に任せる</label>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="field-label">成年後見制度の利用意向</label>
+                <div class="radio-group">
+                    <label class="radio-pill"><input type="radio" name="care-guardian" value="利用したい" onchange="onRadio(this,'medical')"> 利用したい</label>
+                    <label class="radio-pill"><input type="radio" name="care-guardian" value="利用しない" onchange="onRadio(this,'medical')"> 利用しない</label>
+                    <label class="radio-pill"><input type="radio" name="care-guardian" value="未定" onchange="onRadio(this,'medical')"> 未定</label>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="field-label">後見人の希望（人名・関係など）</label>
+                    <input type="text" id="care-guardian-name" placeholder="例：長男 ○○、または弁護士に依頼" oninput="autoSave('medical')">
+                </div>
+                <div class="form-group">
+                    <label class="field-label">希望する介護施設・エリア</label>
+                    <input type="text" id="care-facility" placeholder="例：○○市内、△△エリアが希望" oninput="autoSave('medical')">
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:12px;">
+                <label class="field-label">認知症になった場合の希望</label>
+                <textarea id="care-dementia" placeholder="認知症になった場合にしてほしいこと、してほしくないことなど" oninput="autoSave('medical')"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="field-label">介護に関するその他の希望</label>
+                <textarea id="care-other" placeholder="その他、介護に関する希望があればご記入ください" oninput="autoSave('medical')"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 家族・連絡先 ===== -->
+    <div id="tab-contacts" class="tab-content">
+
+        <div class="card">
+            <h2>家族・親族・大切な人の連絡先</h2>
+            <p class="desc">万が一の際に連絡が必要な方の情報を記録しておきましょう。</p>
+            <div id="contact-list"></div>
+            <div id="add-contact-form" class="add-form hidden">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="field-label">続柄・関係</label>
+                        <input type="text" id="contact-relation" placeholder="例：長男、妹、親友など">
+                    </div>
+                    <div class="form-group">
+                        <label class="field-label">氏名 <span style="color:#c00">*</span></label>
+                        <input type="text" id="contact-name" placeholder="例：山田 太郎">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="field-label">電話番号</label>
+                        <input type="text" id="contact-phone" placeholder="090-xxxx-xxxx">
+                    </div>
+                    <div class="form-group">
+                        <label class="field-label">住所</label>
+                        <input type="text" id="contact-address" placeholder="住所（省略可）">
+                    </div>
+                </div>
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label class="field-label">備考（メールアドレス・連絡優先度など）</label>
+                        <textarea id="contact-notes" placeholder="メールアドレス、連絡の優先度、その他メモなど" style="min-height:55px;"></textarea>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-primary" onclick="addItem('contact')">追加する</button>
+                    <button class="btn btn-secondary" onclick="toggleForm('contact')">キャンセル</button>
+                </div>
+            </div>
+            <div style="margin-top:14px;">
+                <button class="btn btn-secondary" id="add-contact-btn" onclick="toggleForm('contact')">＋ 追加する</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>ペットについて</h2>
+            <p class="desc">ペットを飼っている方は、万が一の際の世話をお願いする方の情報を記録しておきましょう。</p>
+            <div id="pet-list"></div>
+            <div id="add-pet-form" class="add-form hidden">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="field-label">名前 <span style="color:#c00">*</span></label>
+                        <input type="text" id="pet-name" placeholder="ペットの名前">
+                    </div>
+                    <div class="form-group">
+                        <label class="field-label">種類・品種</label>
+                        <input type="text" id="pet-kind" placeholder="例：柴犬、三毛猫など">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="field-label">かかりつけ獣医・連絡先</label>
+                        <input type="text" id="pet-vet" placeholder="例：○○動物病院 / 03-xxxx-xxxx">
+                    </div>
+                    <div class="form-group">
+                        <label class="field-label">世話を頼む人・連絡先</label>
+                        <input type="text" id="pet-caretaker" placeholder="例：娘 ○○ / 090-xxxx-xxxx">
+                    </div>
+                </div>
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label class="field-label">飼育の注意事項・備考</label>
+                        <textarea id="pet-notes" placeholder="食事の量・回数、薬、性格、注意点など" style="min-height:65px;"></textarea>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-primary" onclick="addItem('pet')">追加する</button>
+                    <button class="btn btn-secondary" onclick="toggleForm('pet')">キャンセル</button>
+                </div>
+            </div>
+            <div style="margin-top:14px;">
+                <button class="btn btn-secondary" id="add-pet-btn" onclick="toggleForm('pet')">＋ 追加する</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>デジタル遺産・アカウント管理</h2>
+            <p class="desc">SNS・メール・サブスクリプションなど、デジタル上のアカウントの扱いを記録しておきましょう。</p>
+            <div class="notice">セキュリティのため、パスワードそのものは書かず「保管場所」や「ヒント」のみ記入することをおすすめします。</div>
+            <div id="digital-list"></div>
+            <div id="add-digital-form" class="add-form hidden">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="field-label">サービスの種類</label>
+                        <select id="digital-type">
+                            <option>SNS（Facebook/Instagram等）</option>
+                            <option>メール</option>
+                            <option>動画・音楽サービス</option>
+                            <option>ショッピング</option>
+                            <option>スマートフォン・PC</option>
+                            <option>その他デジタルサービス</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="field-label">サービス名 <span style="color:#c00">*</span></label>
+                        <input type="text" id="digital-name" placeholder="例：Facebook、Gmail、Amazon">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label class="field-label">アカウントID・メールアドレス</label>
+                        <input type="text" id="digital-account" placeholder="例：example@gmail.com">
+                    </div>
+                    <div class="form-group">
+                        <label class="field-label">亡くなった後の希望</label>
+                        <select id="digital-action">
+                            <option>削除してほしい</option>
+                            <option>そのまま残してほしい</option>
+                            <option>家族に引き継いでほしい</option>
+                            <option>家族に任せる</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row single">
+                    <div class="form-group">
+                        <label class="field-label">パスワードの保管場所・備考</label>
+                        <textarea id="digital-notes" placeholder="例：パスワードは○○の手帳に記載、月額課金あり（解約が必要）など" style="min-height:55px;"></textarea>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button class="btn btn-primary" onclick="addItem('digital')">追加する</button>
+                    <button class="btn btn-secondary" onclick="toggleForm('digital')">キャンセル</button>
+                </div>
+            </div>
+            <div style="margin-top:14px;">
+                <button class="btn btn-secondary" id="add-digital-btn" onclick="toggleForm('digital')">＋ 追加する</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== エンディングノート ===== -->
+    <div id="tab-note" class="tab-content">
+        <div class="save-bar" id="note-save-bar">✓ 自動保存しました</div>
+
+        <div class="card">
+            <h2>基本情報</h2>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="field-label">氏名</label>
+                    <input type="text" id="p-name" placeholder="氏名" oninput="autoSave('note')">
+                </div>
+                <div class="form-group">
+                    <label class="field-label">生年月日</label>
+                    <input type="text" id="p-birth" placeholder="例：1950年3月15日" oninput="autoSave('note')">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="field-label">住所</label>
+                    <input type="text" id="p-address" placeholder="現住所" oninput="autoSave('note')">
+                </div>
+                <div class="form-group">
+                    <label class="field-label">緊急連絡先</label>
+                    <input type="text" id="p-emergency" placeholder="例：長男 ○○ 090-xxxx-xxxx" oninput="autoSave('note')">
+                </div>
+            </div>
+            <div class="form-row single">
+                <div class="form-group">
+                    <label class="field-label">かかりつけ医・持病・服薬情報</label>
+                    <textarea id="p-medical" placeholder="かかりつけ医院名、持病、現在の服薬など" style="min-height:70px;" oninput="autoSave('note')"></textarea>
+                </div>
+            </div>
+            <div class="form-row single">
+                <div class="form-group">
+                    <label class="field-label">重要書類の保管場所</label>
+                    <textarea id="p-docs" placeholder="例：保険証・年金手帳は○○の引き出し、通帳類は金庫の中など" style="min-height:70px;" oninput="autoSave('note')"></textarea>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>家族へのメッセージ</h2>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="field-label">家族・大切な人へ</label>
+                <textarea id="n-family" placeholder="家族や大切な人たちへのメッセージをここに書いてください…" style="min-height:150px;" oninput="autoSave('note')"></textarea>
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="field-label">人生を振り返って</label>
+                <textarea id="n-life" placeholder="自分の人生で大切にしてきたこと、誇りに思うことなどを書いてください…" style="min-height:110px;" oninput="autoSave('note')"></textarea>
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="field-label">感謝の言葉</label>
+                <textarea id="n-thanks" placeholder="感謝を伝えておきたい人への言葉を書いてください…" style="min-height:110px;" oninput="autoSave('note')"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="field-label">大切にしてほしいこと・残したいもの</label>
+                <textarea id="n-wishes" placeholder="家族に引き継いでほしいものや、大切にしてほしいことを書いてください…" style="min-height:90px;" oninput="autoSave('note')"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== 葬儀・お墓 ===== -->
+    <div id="tab-funeral" class="tab-content">
+        <div class="save-bar" id="funeral-save-bar">✓ 自動保存しました</div>
+
+        <div class="card">
+            <h2>葬儀の希望</h2>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="field-label">葬儀の形式</label>
+                <div class="radio-group">
+                    <label class="radio-pill"><input type="radio" name="funeral-style" value="一般葬" onchange="onRadio(this,'funeral')"> 一般葬</label>
+                    <label class="radio-pill"><input type="radio" name="funeral-style" value="家族葬" onchange="onRadio(this,'funeral')"> 家族葬</label>
+                    <label class="radio-pill"><input type="radio" name="funeral-style" value="直葬（火葬のみ）" onchange="onRadio(this,'funeral')"> 直葬（火葬のみ）</label>
+                    <label class="radio-pill"><input type="radio" name="funeral-style" value="お任せ" onchange="onRadio(this,'funeral')"> お任せ</label>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="field-label">規模</label>
+                <div class="radio-group">
+                    <label class="radio-pill"><input type="radio" name="funeral-scale" value="大きく" onchange="onRadio(this,'funeral')"> 大きく</label>
+                    <label class="radio-pill"><input type="radio" name="funeral-scale" value="普通" onchange="onRadio(this,'funeral')"> 普通</label>
+                    <label class="radio-pill"><input type="radio" name="funeral-scale" value="小さく（親族のみ）" onchange="onRadio(this,'funeral')"> 小さく（親族のみ）</label>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="field-label">宗教・宗派</label>
+                <div class="radio-group">
+                    <label class="radio-pill"><input type="radio" name="funeral-religion" value="仏教" onchange="onRadio(this,'funeral')"> 仏教</label>
+                    <label class="radio-pill"><input type="radio" name="funeral-religion" value="神道" onchange="onRadio(this,'funeral')"> 神道</label>
+                    <label class="radio-pill"><input type="radio" name="funeral-religion" value="キリスト教" onchange="onRadio(this,'funeral')"> キリスト教</label>
+                    <label class="radio-pill"><input type="radio" name="funeral-religion" value="無宗教" onchange="onRadio(this,'funeral')"> 無宗教</label>
+                    <label class="radio-pill"><input type="radio" name="funeral-religion" value="その他" onchange="onRadio(this,'funeral')"> その他</label>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label class="field-label">宗派・寺院の詳細</label>
+                    <input type="text" id="f-religion-detail" placeholder="例：浄土宗、○○寺との付き合いあり" oninput="autoSave('funeral')">
+                </div>
+                <div class="form-group">
+                    <label class="field-label">喪主の希望</label>
+                    <input type="text" id="f-chief" placeholder="例：長男 ○○に頼みたい" oninput="autoSave('funeral')">
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:12px;">
+                <label class="field-label">参列者の希望</label>
+                <textarea id="f-attendees" placeholder="例：会社関係者には知らせなくてよい、旧友の○○さんには必ず連絡を…" oninput="autoSave('funeral')"></textarea>
+            </div>
+            <div class="form-group" style="margin-bottom:12px;">
+                <label class="field-label">遺影・装花などの希望</label>
+                <textarea id="f-details" placeholder="例：遺影は○年頃の写真を、花は白と薄ピンクのものを…" oninput="autoSave('funeral')"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="field-label">その他の希望</label>
+                <textarea id="f-other" placeholder="葬儀について、その他ご希望があればご記入ください…" oninput="autoSave('funeral')"></textarea>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>お墓・埋葬の希望</h2>
+            <div class="form-group" style="margin-bottom:14px;">
+                <label class="field-label">埋葬の希望</label>
+                <div class="radio-group">
+                    <label class="radio-pill"><input type="radio" name="grave-type" value="既存のお墓" onchange="onRadio(this,'funeral')"> 既存のお墓</label>
+                    <label class="radio-pill"><input type="radio" name="grave-type" value="新しくお墓を購入" onchange="onRadio(this,'funeral')"> 新しく購入</label>
+                    <label class="radio-pill"><input type="radio" name="grave-type" value="樹木葬" onchange="onRadio(this,'funeral')"> 樹木葬</label>
+                    <label class="radio-pill"><input type="radio" name="grave-type" value="散骨" onchange="onRadio(this,'funeral')"> 散骨</label>
+                    <label class="radio-pill"><input type="radio" name="grave-type" value="永代供養" onchange="onRadio(this,'funeral')"> 永代供養</label>
+                    <label class="radio-pill"><input type="radio" name="grave-type" value="お任せ" onchange="onRadio(this,'funeral')"> お任せ</label>
+                </div>
+            </div>
+            <div class="form-group" style="margin-bottom:12px;">
+                <label class="field-label">お墓の場所・詳細</label>
+                <textarea id="g-location" placeholder="例：○○市の△△霊園、寺院名・場所など" style="min-height:75px;" oninput="autoSave('funeral')"></textarea>
+            </div>
+            <div class="form-group">
+                <label class="field-label">その他の希望・メモ</label>
+                <textarea id="g-other" placeholder="お墓について、その他ご希望があればご記入ください…" oninput="autoSave('funeral')"></textarea>
+            </div>
+        </div>
+    </div>
+</div>
+
+<input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
+
+<script>
+const STORAGE_KEY = 'shukkatsu-planner-v2';
+let state = { assets:[], will:{}, medical:{}, contacts:[], pets:[], digital:[], note:{}, funeral:{} };
+
+function loadState() {
+    try { const r = localStorage.getItem(STORAGE_KEY); if (r) state = Object.assign(state, JSON.parse(r)); } catch(e) {}
+}
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+// Navigation
+function showTab(name, btn) {
+    document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    btn.classList.add('active');
+}
+
+// ---- List rendering ----
+const CFG = {
+    asset:   { key:'assets',   el:'asset-list',   badge: a=>({ t:a.type, cls: a.type==='ローン・負債'?'red':'' }), title:a=>a.name, meta:a=>[a.institution&&'📍 '+a.institution, a.contact&&'📞 '+a.contact].filter(Boolean).join('　'), notes:a=>a.notes, icon:'📋' },
+    contact: { key:'contacts', el:'contact-list', badge: a=>({ t:a.relation||'関係者', cls:'' }),            title:a=>a.name, meta:a=>[a.phone&&'📞 '+a.phone, a.address&&'🏠 '+a.address].filter(Boolean).join('　'),            notes:a=>a.notes, icon:'👥' },
+    pet:     { key:'pets',     el:'pet-list',     badge: a=>({ t:a.petKind||'ペット', cls:'purple' }),        title:a=>a.name, meta:a=>[a.vet&&'🏥 '+a.vet, a.caretaker&&'👤 '+a.caretaker].filter(Boolean).join('　'),           notes:a=>a.notes, icon:'🐾' },
+    digital: { key:'digital',  el:'digital-list', badge: a=>({ t:a.dtype||'デジタル', cls:'blue' }),          title:a=>a.name, meta:a=>[a.account&&'🔑 '+a.account, a.action&&'→ '+a.action].filter(Boolean).join('　'),           notes:a=>a.notes, icon:'💻' },
+};
+
+function renderList(type) {
+    const c = CFG[type], items = state[c.key], el = document.getElementById(c.el);
+    if (!items.length) { el.innerHTML = `<div class="empty-state"><div class="icon">${c.icon}</div>まだ登録されていません。<br>「追加する」から登録してください。</div>`; return; }
+    el.innerHTML = items.map((a,i) => {
+        const b = c.badge(a), meta = c.meta(a), notes = c.notes(a);
+        return `<div class="list-item">
+            <span class="badge ${b.cls}">${h(b.t)}</span>
+            <div class="item-info">
+                <strong>${h(c.title(a))}</strong>
+                ${meta ? `<div class="item-meta">${h(meta)}</div>` : ''}
+                ${notes ? `<div class="item-notes">📄 ${h(notes)}</div>` : ''}
+            </div>
+            <div><button class="btn btn-danger btn-sm" onclick="deleteItem('${type}',${i})">削除</button></div>
+        </div>`;
+    }).join('');
+}
+
+function renderAll() { Object.keys(CFG).forEach(renderList); }
+
+function toggleForm(type) {
+    const form = document.getElementById('add-'+type+'-form');
+    const btn  = document.getElementById('add-'+type+'-btn');
+    const opening = form.classList.toggle('hidden');
+    btn.textContent = opening ? '＋ 追加する' : '✕ 閉じる';
+}
+
+function addItem(type) {
+    let item;
+    if (type === 'asset') {
+        const name = v('asset-name'); if (!name) { alert('名称・詳細を入力してください。'); return; }
+        item = { type: document.getElementById('asset-type').value, name, institution:v('asset-institution'), contact:v('asset-contact'), notes:v('asset-notes') };
+        clr(['asset-name','asset-institution','asset-contact','asset-notes']);
+        document.getElementById('asset-type').selectedIndex = 0;
+    } else if (type === 'contact') {
+        const name = v('contact-name'); if (!name) { alert('氏名を入力してください。'); return; }
+        item = { relation:v('contact-relation'), name, phone:v('contact-phone'), address:v('contact-address'), notes:v('contact-notes') };
+        clr(['contact-relation','contact-name','contact-phone','contact-address','contact-notes']);
+    } else if (type === 'pet') {
+        const name = v('pet-name'); if (!name) { alert('ペットの名前を入力してください。'); return; }
+        item = { name, petKind:v('pet-kind'), vet:v('pet-vet'), caretaker:v('pet-caretaker'), notes:v('pet-notes') };
+        clr(['pet-name','pet-kind','pet-vet','pet-caretaker','pet-notes']);
+    } else if (type === 'digital') {
+        const name = v('digital-name'); if (!name) { alert('サービス名を入力してください。'); return; }
+        item = { dtype: document.getElementById('digital-type').value, name, account:v('digital-account'), action: document.getElementById('digital-action').value, notes:v('digital-notes') };
+        clr(['digital-name','digital-account','digital-notes']);
+        document.getElementById('digital-type').selectedIndex = 0;
+        document.getElementById('digital-action').selectedIndex = 0;
+    }
+    state[CFG[type].key].push(item);
+    saveState(); renderList(type); toggleForm(type);
+}
+
+function deleteItem(type, i) {
+    if (!confirm('この項目を削除しますか？')) return;
+    state[CFG[type].key].splice(i, 1);
+    saveState(); renderList(type);
+}
+
+// ---- Auto-save ----
+const timers = {};
+function autoSave(section) {
+    clearTimeout(timers[section]);
+    timers[section] = setTimeout(() => { collect(section); saveState(); flash(section); }, 700);
+}
+
+function onRadio(radio, section) {
+    document.querySelectorAll(`input[name="${radio.name}"]`).forEach(r => r.closest('.radio-pill').classList.toggle('selected', r.checked));
+    autoSave(section);
+}
+
+function collect(section) {
+    if (section === 'note') {
+        state.note = { pName:v('p-name'), pBirth:v('p-birth'), pAddress:v('p-address'), pEmergency:v('p-emergency'), pMedical:v('p-medical'), pDocs:v('p-docs'), nFamily:v('n-family'), nLife:v('n-life'), nThanks:v('n-thanks'), nWishes:v('n-wishes') };
+    } else if (section === 'will') {
+        state.will = { exists:rd('will-exists'), type:rd('will-type'), location:v('will-location'), lawyer:v('will-lawyer'), notes:v('will-notes') };
+    } else if (section === 'medical') {
+        state.medical = { lifeSupport:rd('med-lifesupport'), artificial:rd('med-artificial'), organ:rd('med-organ'), body:rd('med-body'), other:v('med-other'), carePlace:rd('care-place'), guardian:rd('care-guardian'), guardianName:v('care-guardian-name'), facility:v('care-facility'), dementia:v('care-dementia'), careOther:v('care-other') };
+    } else if (section === 'funeral') {
+        state.funeral = { style:rd('funeral-style'), scale:rd('funeral-scale'), religion:rd('funeral-religion'), religionDetail:v('f-religion-detail'), chief:v('f-chief'), attendees:v('f-attendees'), details:v('f-details'), other:v('f-other'), graveType:rd('grave-type'), graveLocation:v('g-location'), graveOther:v('g-other') };
+    }
+}
+
+function flash(section) {
+    const bar = document.getElementById(section+'-save-bar');
+    if (!bar) return;
+    bar.classList.add('show');
+    setTimeout(() => bar.classList.remove('show'), 2000);
+}
+
+// ---- Populate from state ----
+function populate() {
+    const n = state.note||{};
+    st('p-name',n.pName); st('p-birth',n.pBirth); st('p-address',n.pAddress); st('p-emergency',n.pEmergency);
+    st('p-medical',n.pMedical); st('p-docs',n.pDocs); st('n-family',n.nFamily); st('n-life',n.nLife);
+    st('n-thanks',n.nThanks); st('n-wishes',n.nWishes);
+
+    const w = state.will||{};
+    cr('will-exists',w.exists); cr('will-type',w.type);
+    st('will-location',w.location); st('will-lawyer',w.lawyer); st('will-notes',w.notes);
+
+    const m = state.medical||{};
+    cr('med-lifesupport',m.lifeSupport); cr('med-artificial',m.artificial);
+    cr('med-organ',m.organ); cr('med-body',m.body); st('med-other',m.other);
+    cr('care-place',m.carePlace); cr('care-guardian',m.guardian);
+    st('care-guardian-name',m.guardianName); st('care-facility',m.facility);
+    st('care-dementia',m.dementia); st('care-other',m.careOther);
+
+    const f = state.funeral||{};
+    cr('funeral-style',f.style); cr('funeral-scale',f.scale); cr('funeral-religion',f.religion); cr('grave-type',f.graveType);
+    st('f-religion-detail',f.religionDetail); st('f-chief',f.chief); st('f-attendees',f.attendees);
+    st('f-details',f.details); st('f-other',f.other); st('g-location',f.graveLocation); st('g-other',f.graveOther);
+
+    document.querySelectorAll('.radio-pill input[type="radio"]').forEach(r => r.closest('.radio-pill').classList.toggle('selected', r.checked));
+}
+
+// ---- Export / Import ----
+function exportData() {
+    ['note','will','medical','funeral'].forEach(collect);
+    saveState();
+    const blob = new Blob([JSON.stringify(state, null, 2)], { type:'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'shukkatsu-' + new Date().toISOString().slice(0,10) + '.json';
+    a.click(); URL.revokeObjectURL(url);
+}
+function importData() { document.getElementById('import-file').click(); }
+function handleImport(e) {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+        try {
+            const data = JSON.parse(ev.target.result);
+            if (!confirm('現在のデータを読み込んだデータで上書きします。よろしいですか？')) return;
+            state = Object.assign(state, data);
+            saveState(); renderAll(); populate();
+            alert('データを読み込みました。');
+        } catch { alert('ファイルの読み込みに失敗しました。'); }
+    };
+    reader.readAsText(file); e.target.value = '';
+}
+
+// ---- Helpers ----
+function h(s) { return String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function v(id) { return (document.getElementById(id)?.value??'').trim(); }
+function st(id, val) { const el = document.getElementById(id); if (el && val) el.value = val; }
+function rd(name) { return document.querySelector(`input[name="${name}"]:checked`)?.value??''; }
+function cr(name, val) { if (!val) return; const r = document.querySelector(`input[name="${name}"][value="${val}"]`); if (r) r.checked = true; }
+function clr(ids) { ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; }); }
+
+// ---- Init ----
+loadState(); renderAll(); populate();
+</script>
+</body>
+</html>
